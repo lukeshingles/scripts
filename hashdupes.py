@@ -16,34 +16,46 @@ def getfilehash(filename):
 
 def main():
     parser = argparse.ArgumentParser(description='Find files with duplicate hashes')
-    parser.add_argument('files', nargs='*', default=(x for x in glob.glob("*") if os.path.isfile(x)),
+    parser.add_argument('files', nargs='*', default=glob.glob("*"),
                         help='list of files to check (default: *)')
     args = parser.parse_args()
 
-    filesizecount = {}
-    for filepath in args.files:
-        size = os.path.getsize(filepath)
-        filesizecount[size] = filesizecount.get(size, 0) + 1
+    filelist = [x for x in args.files if os.path.isfile(x)]
 
-    # only hash a file if exist other files with the same file size
-    hashdict = {}
-    for filepath in (x for x in args.files if filesizecount[os.path.getsize(x)] > 1):
-        strhash = getfilehash(filepath)
-        hashdict.setdefault(strhash, []).append(filepath)
-        # print(strhash, os.path.getsize(filepath), filepath)
+    sizedict = {}
+    for filepath in filelist:
+        sizedict.setdefault(os.path.getsize(filepath), []).append(filepath)
 
     founddupehash = False
-    for strhash, filematches in (x for x in hashdict.items() if len(x[1]) > 1):
-        if founddupehash:
-            print()
-        founddupehash = True
+    # loop over file sizes with multiple matches in order of increasing size (because hasing big files is hash)
+    for size, filematches in sorted([x for x in sizedict.items() if len(x[1]) > 1], key=lambda x: x[0]):
+        hashdict = {}
 
-        for index, filematch in enumerate(filematches):
-            columnone = strhash if index == 0 else "".ljust(len(strhash))
-            print(f"{columnone}  {os.path.getsize(filematch)}  {time.ctime(os.path.getmtime(filematch))}  {filematch}")
+        for filepath in filematches:
+            strhash = getfilehash(filepath)
+            hashdict.setdefault(strhash, []).append(filepath)
+            # print(strhash, os.path.getsize(filepath), filepath)
+
+        founddupehashthissize = False
+        for strhash, filematches in (x for x in hashdict.items() if len(x[1]) > 1):
+            if founddupehashthissize:
+                print()
+            else:
+                if founddupehash:
+                    print()
+                print(f"{size} byte files:")
+            founddupehashthissize = True
+
+            for index, filematch in enumerate(filematches):
+                columnone = strhash  # if index == 0 else "".ljust(len(strhash))
+                print(f"  {columnone}  {os.path.getsize(filematch)}  "
+                      f"{time.ctime(os.path.getmtime(filematch))}  {filematch}")
+
+        if founddupehashthissize:
+            founddupehash = True
 
     if not founddupehash:
-        print(f"No duplicates among {len(args.files)} files")
+        print(f"No duplicates among {len(filelist)} files")
 
 
 if __name__ == "__main__":
