@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import os
 import glob
-from collections import defaultdict
 import hashlib
+import os
+from collections import defaultdict
 from functools import partial
+
 
 """
     Print out all files in the current directory that have duplicate hashes
