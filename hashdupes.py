@@ -4,14 +4,12 @@ import glob
 import hashlib
 import os
 import time
-from collections import defaultdict
-from functools import partial
 
 
 def getfilehash(filename):
     with open(filename, mode='rb') as f:
         d = hashlib.sha1()
-        for buf in iter(partial(f.read, 128 * 1024), b''):
+        for buf in iter(lambda: f.read(128 * 1024), b''):
             d.update(buf)
     return d.hexdigest()
 
@@ -22,12 +20,12 @@ def main():
                         help='list of files to check (default: *)')
     args = parser.parse_args()
 
-    hashdict = defaultdict(list)
+    hashdict = {}
     for filepath in args.files:
         if not os.path.isfile(filepath):
             continue
         strhash = getfilehash(filepath)
-        hashdict[strhash].append(filepath)
+        hashdict.setdefault(strhash, []).append(filepath)
         # print(strhash, filepath)
 
     firstdupehash = True
