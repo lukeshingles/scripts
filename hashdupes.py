@@ -16,31 +16,34 @@ def getfilehash(filename):
 
 def main():
     parser = argparse.ArgumentParser(description='Find files with duplicate hashes')
-    parser.add_argument('files', nargs='*', default=glob.glob("*"),
+    parser.add_argument('files', nargs='*', default=(x for x in glob.glob("*") if os.path.isfile(x)),
                         help='list of files to check (default: *)')
     args = parser.parse_args()
 
-    hashdict = {}
+    filesizecount = {}
     for filepath in args.files:
-        if not os.path.isfile(filepath):
-            continue
+        size = os.path.getsize(filepath)
+        filesizecount[size] = filesizecount.get(size, 0) + 1
+
+    # only hash a file if exist other files with the same file size
+    hashdict = {}
+    for filepath in (x for x in args.files if filesizecount[os.path.getsize(x)] > 1):
         strhash = getfilehash(filepath)
         hashdict.setdefault(strhash, []).append(filepath)
-        # print(strhash, filepath)
+        # print(strhash, os.path.getsize(filepath), filepath)
 
-    firstdupehash = True
-    for strhash, filematches in hashdict.items():
-        if len(filematches) > 1:
-            if not firstdupehash:
-                print()
-            firstdupehash = False
+    founddupehash = False
+    for strhash, filematches in (x for x in hashdict.items() if len(x[1]) > 1):
+        if founddupehash:
+            print()
+        founddupehash = True
 
-            for index, filematch in enumerate(filematches):
-                columnone = strhash if index == 0 else "".ljust(len(strhash))
-                print(f"{columnone}  {time.ctime(os.path.getmtime(filematch))}  {filematch}")
+        for index, filematch in enumerate(filematches):
+            columnone = strhash if index == 0 else "".ljust(len(strhash))
+            print(f"{columnone}  {os.path.getsize(filematch)}  {time.ctime(os.path.getmtime(filematch))}  {filematch}")
 
-    if firstdupehash:
-        print("No duplicates!")
+    if not founddupehash:
+        print(f"No duplicates among {len(args.files)} files")
 
 
 if __name__ == "__main__":
