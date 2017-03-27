@@ -27,7 +27,7 @@ def main():
         sizedict.setdefault(os.path.getsize(filepath), []).append(filepath)
 
     founddupehash = False
-    # loop over file sizes with multiple matches in order of increasing size (because hasing big files is hash)
+    # loop over file sizes with multiple matches in order of increasing size (because hashing big files is slow)
     for size, filematches in sorted([x for x in sizedict.items() if len(x[1]) > 1], key=lambda x: x[0]):
         hashdict = {}
 
