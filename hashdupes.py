@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import fnmatch
 import glob
 import hashlib
 import os
@@ -20,6 +21,8 @@ def main():
     parser = argparse.ArgumentParser(description='Find files with duplicate hashes')
     parser.add_argument('files', nargs='*', default=glob.glob("**", recursive=True),
                         help='list of files to check (default: *)')
+    parser.add_argument('-name', default='*',
+                        help='Pattern to match filenames (default: *)')
     parser.add_argument('--cloudconflicts', default=False, action='store_true',
                         help=(
                             'Find Google Drive/OneDrive conflict duplicates '
@@ -32,7 +35,7 @@ def main():
     findconflictmode = args.cloudconflicts
     dryrun = not args.confirm
 
-    filelist = [x for x in args.files if os.path.isfile(x)]
+    filelist = [x for x in args.files if os.path.isfile(x) and fnmatch.fnmatch(x, args.name)]
 
     sizedict = {}
     for filepath in filelist:
