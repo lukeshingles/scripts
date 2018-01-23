@@ -19,8 +19,8 @@ def getfilehash(filename):
 
 def main():
     parser = argparse.ArgumentParser(description='Find files with duplicate hashes')
-    parser.add_argument('files', nargs='*', default=glob.glob("**", recursive=True),
-                        help='list of files to check (default: *)')
+    parser.add_argument('paths', nargs='*', default=['.'],
+                        help='Folder to search for duplicates (default: .)')
     parser.add_argument('-name', default='*',
                         help='Pattern to match filenames (default: *)')
     parser.add_argument('--cloudconflicts', default=False, action='store_true',
@@ -35,7 +35,14 @@ def main():
     findconflictmode = args.cloudconflicts
     dryrun = not args.confirm
 
-    filelist = [x for x in args.files if os.path.isfile(x) and fnmatch.fnmatch(x, args.name)]
+    print(args.paths)
+    filelist_unfiltered = set()
+    for path in args.paths:
+        if os.path.isfile(path):
+            filelist_unfiltered.add(os.path.normpath(path))
+        else:
+            filelist_unfiltered.update([os.path.normpath(x) for x in glob.glob(os.path.join(path, '**'), recursive=True)])
+    filelist = [x for x in filelist_unfiltered if os.path.isfile(x) and fnmatch.fnmatch(x, args.name)]
 
     sizedict = {}
     for filepath in filelist:
