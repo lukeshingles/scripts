@@ -51,7 +51,7 @@ def main():
 
     founddupehash = False
     # loop over file sizes with multiple matches in order of increasing size (because hashing big files is slow)
-    for size, filematches in sorted([x for x in sizedict.items() if len(x[1]) > 1], key=lambda x: x[0]):
+    for size, filematches in sorted([x for x in sizedict.items() if len(x[1]) > 1]):
         if not findconflictmode:
             hashdict_thissize = {}
 
@@ -72,7 +72,7 @@ def main():
 
                 for filematch in filematches:
                     mtime = os.path.getmtime(filematch)
-                    print(f"  {strhash}  {os.path.getsize(filematch)}  {time.ctime(mtime)}  {filematch}")
+                    print(f"  {strhash}  {os.path.getsize(filematch)} bytes  {time.ctime(mtime)}  {filematch}")
 
             if founddupehashthissize:
                 founddupehash = True
@@ -105,7 +105,7 @@ def main():
 
                 founddupehash = True
 
-                print(f"'{originalpath}' {strhash}")
+                print(f"'{originalpath}' {size} bytes {strhash}")
 
                 mtimes = [os.path.getmtime(filepath) for filepath in pathhashmatches]
                 oldestfilepath = [
@@ -118,6 +118,7 @@ def main():
                     print(f"   {strhash}, {os.path.getsize(filepath)} bytes, modified {time.ctime(mtime)}, "
                           f"'{filepath}'{keepstr}")
                 rmfiles = [filepath for filepath in pathhashmatches if filepath != oldestfilepath]
+                print()
                 for filepath in rmfiles:
                     if dryrun:
                         print(f"   (not executed) rm '{filepath}'")
