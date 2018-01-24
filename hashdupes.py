@@ -35,13 +35,14 @@ def main():
     findconflictmode = args.cloudconflicts
     dryrun = not args.confirm
 
-    print(args.paths)
     filelist_unfiltered = set()
     for path in args.paths:
         if os.path.isfile(path):
             filelist_unfiltered.add(os.path.normpath(path))
         else:
-            filelist_unfiltered.update([os.path.normpath(x) for x in glob.glob(os.path.join(path, '**'), recursive=True)])
+            filelist_unfiltered.update(
+                [os.path.normpath(x) for x in glob.glob(os.path.join(path, '**'), recursive=True)])
+
     filelist = [x for x in filelist_unfiltered if os.path.isfile(x) and fnmatch.fnmatch(x, args.name)]
 
     sizedict = {}
