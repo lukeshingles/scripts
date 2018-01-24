@@ -52,82 +52,84 @@ def main():
     founddupehash = False
     # loop over file sizes with multiple matches in order of increasing size (because hashing big files is slow)
     for size, filematches in sorted([x for x in sizedict.items() if len(x[1]) > 1], key=lambda x: x[0]):
-        hashdict = {}
+        if not findconflictmode:
+            hashdict_thissize = {}
 
-        for filepath in filematches:
-            strhash = getfilehash(filepath)
-            hashdict.setdefault(strhash, []).append(filepath)
-            # print(strhash, os.path.getsize(filepath), filepath)
+            for filepath in filematches:
+                strhash = getfilehash(filepath)
+                hashdict_thissize.setdefault(strhash, []).append(filepath)
+                # print(strhash, os.path.getsize(filepath), filepath)
 
-        founddupehashthissize = False
-        for strhash, filematches in (x for x in hashdict.items() if len(x[1]) > 1):
-            if not findconflictmode:
+            founddupehashthissize = False
+            for strhash, filematches in (x for x in hashdict_thissize.items() if len(x[1]) > 1):
                 if founddupehashthissize:
                     print()
                 else:
                     if founddupehash:
                         print()
-                    print(f"{size} byte files:")
+                    print(f"{size} byte files (count {len(filematches)}):")
                 founddupehashthissize = True
 
-            fileconflicts = {}
-            for index, filematch in enumerate(filematches):
-                mtime = os.path.getmtime(filematch)
-
-                if findconflictmode:
-                    suffixpart = "".join(Path(filematch).suffixes)  # contains ".tar.gz" for example
-                    originalname = Path(filematch).name
-
-                    # temporarily remove the suffix part if there is one
-                    if suffixpart:
-                        originalname = originalname[: -len(suffixpart)]
-
-                    for dupnum in range(10):
-                        endstr = f" ({dupnum:d})"
-                        if originalname.endswith(endstr):
-                            originalname = originalname[:-len(endstr)]
-                    originalpath = os.path.join(Path(filematch).parent, originalname + suffixpart)
-                    # fileconflictsets
-
-                    if originalpath not in fileconflicts:
-                        fileconflicts[originalpath] = []
-                    fileconflicts[originalpath].append(filematch)
-                else:
+                for filematch in filematches:
+                    mtime = os.path.getmtime(filematch)
                     print(f"  {strhash}  {os.path.getsize(filematch)}  {time.ctime(mtime)}  {filematch}")
 
-            if findconflictmode:
-                for originalpath, filepaths in fileconflicts.items():
-                    if len(filepaths) > 1:
-                        if founddupehash:
-                            print()
-                        print(f"{originalpath}")
+            if founddupehashthissize:
+                founddupehash = True
 
-                        mtimes = [os.path.getmtime(filepath) for filepath in filepaths]
+        else:
 
-                        oldestfilepath = [
-                            filepath for filepath in filepaths if os.path.getmtime(filepath) == min(mtimes)][0]
+            originalpathhashdict = {}
 
-                        for filepath, mtime in zip(filepaths, mtimes):
-                            keepstr = "  (KEEP)" if filepath == oldestfilepath else ""
-                            print(f"   {strhash}, {os.path.getsize(filepath)} bytes, modified {time.ctime(mtime)}, "
-                                  f"'{filepath}'{keepstr}")
-                        print()
-                        rmfiles = [filepath for filepath in filepaths if filepath != oldestfilepath]
-                        for filepath in rmfiles:
-                            if dryrun:
-                                print(f"   (not executed) rm '{filepath}'")
-                            else:
-                                print(f"   rm '{filepath}'")
-                                os.remove(filepath)
-                        if dryrun:
-                            print(f"   (not executed) mv '{oldestfilepath}' '{originalpath}'")
-                        else:
-                            print(f"   mv '{oldestfilepath}' '{originalpath}'")
-                            os.rename(oldestfilepath, originalpath)
-                        founddupehash = True
+            for filematch in filematches:
+                strhash = getfilehash(filematch)
 
-        if founddupehashthissize:
-            founddupehash = True
+                suffixpart = "".join(Path(filematch).suffixes)  # contains ".tar.gz" for example
+                originalname = Path(filematch).name
+
+                # temporarily remove the suffix part if there is one
+                if suffixpart:
+                    originalname = originalname[: -len(suffixpart)]
+
+                for dupnum in range(10):
+                    endstr = f" ({dupnum:d})"
+                    if originalname.endswith(endstr):
+                        originalname = originalname[:-len(endstr)]
+                originalpath = os.path.normpath(os.path.join(Path(filematch).parent, originalname + suffixpart))
+
+                originalpathhashdict.setdefault((originalpath, strhash), []).append(filematch)
+
+            for (originalpath, strhash), pathhashmatches in (x for x in originalpathhashdict.items() if len(x[1]) > 1):
+                if founddupehash:
+                    print()
+
+                founddupehash = True
+
+                print(f"'{originalpath}' {strhash}")
+
+                mtimes = [os.path.getmtime(filepath) for filepath in pathhashmatches]
+                oldestfilepath = [
+                    filepath for filepath in pathhashmatches if os.path.getmtime(filepath) == min(mtimes)][0]
+
+                for filepath in sorted(pathhashmatches):
+                    mtime = os.path.getmtime(filepath)
+
+                    keepstr = "  (KEEP)" if filepath == oldestfilepath else ""
+                    print(f"   {strhash}, {os.path.getsize(filepath)} bytes, modified {time.ctime(mtime)}, "
+                          f"'{filepath}'{keepstr}")
+                rmfiles = [filepath for filepath in pathhashmatches if filepath != oldestfilepath]
+                for filepath in rmfiles:
+                    if dryrun:
+                        print(f"   (not executed) rm '{filepath}'")
+                    else:
+                        print(f"   rm '{filepath}'")
+                        os.remove(filepath)
+                if oldestfilepath != originalpath:
+                    if dryrun:
+                        print(f"   (not executed) mv '{oldestfilepath}' '{originalpath}'")
+                    else:
+                        print(f"   mv '{oldestfilepath}' '{originalpath}'")
+                        os.rename(oldestfilepath, originalpath)
 
     if not founddupehash:
         print(f"No duplicates found among {len(filelist)} files")
