@@ -11,9 +11,13 @@ def validipaddress(ipaddress):
     except (AttributeError, TypeError):
         return False # not a string
 
-def printrecords(records):
-    for record in records:
-        print(f"  {record['name']}  {record['type']}  {record['data']}  TTL: {record['ttl']}")
+
+def printdnsrecords(apiurl, headers, prefix=""):
+    with requests.get(apiurl, headers=headers) as r:
+        assert(r.status_code == 200)
+        for record in r.json():
+            print(f"{prefix:25s}{record['name']}  {record['type']}  {record['data']}  TTL: {record['ttl']}")
+
 
 def main():
     key = "KEY"
@@ -31,7 +35,7 @@ def main():
     # Time To Live in seconds
     ttl = 600
 
-    print(f"Starting at local time {datetime.datetime.now().isoformat()}\n")
+    print(f"Starting at local time {datetime.datetime.now().isoformat()}")
 
     get_ip_url = "http://api.ipify.org"
 
@@ -40,24 +44,17 @@ def main():
         ipaddress = r.text
         assert(validipaddress(ipaddress))
 
-    print(f"External IP address: {ipaddress}")
+    print(f"External IP address is {ipaddress}")
 
     apiurl = f"https://api.godaddy.com/v1/domains/{domain}/records/A/{hostname}"
 
-    print()
-
-    with requests.get(apiurl, headers=authheader) as r:
-        assert(r.status_code == 200)
-        print("GoDaddy current records:")
-        printrecords(r.json())
-
-    print()
+    printdnsrecords(apiurl, authheader, prefix="GoDaddy DNS before: ")
 
     newrecords = [{ "data": ipaddress, "ttl": ttl, "name": hostname, "type": "A" },]
     with requests.put(apiurl, headers=authheader, json=newrecords) as r:
         assert(r.status_code == 200)
-        print("GoDaddy new records:")
-        printrecords(newrecords)
+
+    printdnsrecords(apiurl, authheader, prefix="GoDaddy DNS after: ")
 
     print("\n-----\n")
 
