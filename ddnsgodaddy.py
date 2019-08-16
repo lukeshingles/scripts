@@ -63,7 +63,7 @@ def main():
 
         printdnsrecords(domain, hostname, authheader, prefix="GoDaddy DNS after: ")
 
-    print("\n-----\n")
+    print("")
 
 
 main()
