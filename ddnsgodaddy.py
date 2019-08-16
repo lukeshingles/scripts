@@ -31,7 +31,7 @@ def main():
     # Time To Live in seconds
     ttl = 600
 
-    print(f"Local time is {datetime.datetime.now().isoformat()}\n")
+    print(f"Starting at local time {datetime.datetime.now().isoformat()}\n")
 
     get_ip_url = "http://api.ipify.org"
 
@@ -58,5 +58,8 @@ def main():
         assert(r.status_code == 200)
         print("GoDaddy new records:")
         printrecords(newrecords)
+
+    print("\n-----\n")
+
 
 main()
