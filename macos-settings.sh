@@ -13,12 +13,6 @@ defaults write com.apple.finder ShowPathbar -bool true
 # Disable the warning before emptying the Trash
 defaults write com.apple.finder WarnOnEmptyTrash -bool false
 
-# Disable Dashboard
-defaults write com.apple.dashboard mcx-disabled -bool true
-
-# Don’t show Dashboard as a Space
-defaults write com.apple.dock dashboard-in-overlay -bool true
-
 # Bottom left screen corner -> put display to sleep
 defaults write com.apple.dock wvous-bl-corner -int 10
 
@@ -37,9 +31,6 @@ defaults write com.apple.TextEdit RichText -int 0
 # Open and save files as UTF-8 in TextEdit
 defaults write com.apple.TextEdit PlainTextEncoding -int 4
 defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
-
-# Don't autoconnect to Bluetooth speakers
-sudo defaults write /Library/Preferences/com.apple.Bluetooth.plist DontPageAudioDevices 1
 
 
 
