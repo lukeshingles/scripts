@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+import os
 import requests
 
 def validipaddress(ipaddress):
@@ -26,8 +27,8 @@ def printdnsrecords(domain, hostname, headers, prefix="", ipmatch=None):
 
 
 def main():
-    key = "KEY"
-    secret = "SECRET"
+    key = os.environ['GODADDY_KEY']
+    secret = os.environ['GODADDY_SECRET']
 
     authheader = {
         "Authorization": f"sso-key {key}:{secret}",
