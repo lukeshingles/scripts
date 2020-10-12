@@ -13,8 +13,7 @@ def validipaddress(ipaddress):
         return False # not a string
 
 
-def printdnsrecords(domain, hostname, headers, prefix="", ipmatch=None):
-    apiurl = f"https://api.godaddy.com/v1/domains/{domain}/records/A/{hostname}"
+def printdnsrecords(apiurl, headers, prefix="", ipmatch=None):
     updaterequired = True
     with requests.get(apiurl, headers=headers) as r:
         assert(r.status_code == 200)
@@ -53,7 +52,8 @@ def main():
 
     print(f"External IP address is {ipaddress}")
 
-    updaterequired = printdnsrecords(domain, hostname, authheader, prefix="GoDaddy DNS before: ", ipmatch=ipaddress)
+    apiurl = f"https://api.godaddy.com/v1/domains/{domain}/records/A/{hostname}"
+    updaterequired = printdnsrecords(apiurl, authheader, prefix="GoDaddy DNS before: ", ipmatch=ipaddress)
 
     if not updaterequired:
             print("(no update needed)")
@@ -62,7 +62,7 @@ def main():
         with requests.put(apiurl, headers=authheader, json=newrecords) as r:
             assert(r.status_code == 200)
 
-        printdnsrecords(domain, hostname, authheader, prefix="GoDaddy DNS after: ")
+        printdnsrecords(apiurl, authheader, prefix="GoDaddy DNS after: ")
 
     print("")
 
