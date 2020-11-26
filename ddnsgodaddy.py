@@ -3,14 +3,15 @@ import datetime
 import os
 import requests
 
+
 def validipaddress(ipaddress):
     try:
         parts = ipaddress.split('.')
         return len(parts) == 4 and all(0 <= int(part) < 256 for part in parts)
     except ValueError:
-        return False # one of the 'parts' not convertible to integer
+        return False  # one of the 'parts' not convertible to integer
     except (AttributeError, TypeError):
-        return False # not a string
+        return False  # not a string
 
 
 def printdnsrecords(apiurl, headers, prefix="", ipmatch=None):
@@ -56,9 +57,9 @@ def main():
     updaterequired = printdnsrecords(apiurl, authheader, prefix="GoDaddy DNS before: ", ipmatch=ipaddress)
 
     if not updaterequired:
-            print("(no update needed)")
+        print("(no update needed)")
     else:
-        newrecords = [{ "data": ipaddress, "ttl": ttl, "name": hostname, "type": "A" },]
+        newrecords = [{"data": ipaddress, "ttl": ttl, "name": hostname, "type": "A" },]
         with requests.put(apiurl, headers=authheader, json=newrecords) as r:
             assert(r.status_code == 200)
 
