@@ -3,6 +3,7 @@
 #mr -j 4 update
 updatehomebrew.sh
 updatepip.sh
+# softwareupdate -i -a
 
-#tlmgr update --self --all
+# sudo tlmgr update --self --all
 #--reinstall-forcibly-removed
