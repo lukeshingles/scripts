@@ -35,3 +35,5 @@ defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
 # Enable alternate and accented characters
 defaults write -g ApplePressAndHoldEnabled -bool true
 
+# Mail drop minsize reduced from 20MB to 10MB
+defaults write com.apple.mail minSizeKB 10000
