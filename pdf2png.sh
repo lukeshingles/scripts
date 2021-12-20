@@ -7,6 +7,6 @@ fi
 
 for file in "$@"
 do
-    newfile=$(basename "$file" .pdf).png
+    newfile=${file%.pdf}.png
     sips -s format png "$file" --out "$newfile"
 done
