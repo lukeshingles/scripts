@@ -57,14 +57,14 @@ do
       if [ "$SKIPFILE" = false ]; then
         if [[ ${file##*\.}  == 'gz' ]]; then
           # uncompress gzip and compress xzip
-          ORIGSUM=$(gunzip -c $file | sha1sum)
+          ORIGSUM=$(gunzip -c $file | shasum)
           echo "$ORIGSUM (gzip uncompressed file checksum)"
 
           incompletefile=$filexz
           gunzip < "$file" | xz -T0 -f -v --best > "$filexz"
           incompletefile=""
 
-          NEWSUM=$(unxz -c $filexz | sha1sum)
+          NEWSUM=$(unxz -c $filexz | shasum)
           echo "$NEWSUM (new xzip uncompressed checksum)"
 
           if xz -t "$filexz"; then
