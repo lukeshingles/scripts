@@ -47,19 +47,19 @@ do
       if [[ -f "$filexz" ]]; then
         if [[ ${file##*\.}  == 'gz' ]]; then
           ORIGSUM=$(gunzip -c $file | shasum)
-          echo "$ORIGSUM ($file gzip uncompressed checksum)"
+          echo "$ORIGSUM ($(basename $file) gzip uncompressed checksum)"
         else
           ORIGSUM=$(shasum < $file)
-          echo "$ORIGSUM ($file original file checksum)"
+          echo "$ORIGSUM ($(basename $file) original file checksum)"
         fi
         XZORIGSUM=$(unxz -c $filexz | shasum)
-        echo "$XZORIGSUM ($filexz uncompressed checksum)"
+        echo "$XZORIGSUM ($(basename $filexz) uncompressed checksum)"
         if [ "${ORIGSUM}" = "${XZORIGSUM}" ]; then
           echo "GOOD: source and xzip files match"
         else
           echo "WARNING: checksum mismatch! existing xzip file contains different data"
         fi
-        read "confirmoverwrite?$filexz already exists! Overwrite? [y]"
+        read "confirmoverwrite?$(basename $filexz) already exists! Overwrite? [y]"
         if [[ "$confirmoverwrite" =~ ^[Yy]$ ]]
         then
           SKIPFILE=false
@@ -72,27 +72,27 @@ do
         if [[ ${file##*\.}  == 'gz' ]]; then
           # uncompress gzip and compress xzip
           ORIGSUM=$(gunzip -c $file | shasum)
-          echo "$ORIGSUM ($file gzip uncompressed checksum)"
+          echo "$ORIGSUM ($(basename $file) gzip uncompressed checksum)"
 
           incompletefile=$filexz
           gunzip < "$file" | xz -T0 -f -v --best > "$filexz"
           incompletefile=""
 
           NEWSUM=$(unxz -c $filexz | shasum)
-          echo "$NEWSUM ($filexz uncompressed checksum)"
+          echo "$NEWSUM ($(basename $filexz) uncompressed checksum)"
 
           if xz -t "$filexz"; then
             if [ "${ORIGSUM}" = "${NEWSUM}" ]; then
               rm $file
-              echo "$filexz is good and checksum matched. Deleted $file"
+              echo "$(basename $filexz) is good and checksum matched. Deleted $(basename $file)"
             else
               rm $filexz
-              echo "ERROR: checksum mismatch! Did not delete $file"
+              echo "ERROR: checksum mismatch! Did not delete $(basename $file)"
               read "Press enter to continue"
             fi
           else
             rm $filexz
-            echo "ERROR: $filexz is bad according to xz!"
+            echo "ERROR: $(basename $filexz) is bad according to xz!"
             read "Press enter to continue"
           fi
         else
