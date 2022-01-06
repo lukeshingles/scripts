@@ -45,6 +45,20 @@ do
 
       SKIPFILE=false
       if [[ -f "$filexz" ]]; then
+        if [[ ${file##*\.}  == 'gz' ]]; then
+          ORIGSUM=$(gunzip -c $file | shasum)
+          echo "$ORIGSUM ($file gzip uncompressed checksum)"
+        else
+          ORIGSUM=$(shasum < $file)
+          echo "$ORIGSUM ($file original file checksum)"
+        fi
+        XZORIGSUM=$(unxz -c $filexz | shasum)
+        echo "$XZORIGSUM ($filexz uncompressed checksum)"
+        if [ "${ORIGSUM}" = "${XZORIGSUM}" ]; then
+          echo "GOOD: source and xzip files match"
+        else
+          echo "WARNING: checksum mismatch! existing xzip file contains different data"
+        fi
         read "confirmoverwrite?$filexz already exists! Overwrite? [y]"
         if [[ "$confirmoverwrite" =~ ^[Yy]$ ]]
         then
@@ -58,14 +72,14 @@ do
         if [[ ${file##*\.}  == 'gz' ]]; then
           # uncompress gzip and compress xzip
           ORIGSUM=$(gunzip -c $file | shasum)
-          echo "$ORIGSUM (gzip uncompressed file checksum)"
+          echo "$ORIGSUM ($file gzip uncompressed checksum)"
 
           incompletefile=$filexz
           gunzip < "$file" | xz -T0 -f -v --best > "$filexz"
           incompletefile=""
 
           NEWSUM=$(unxz -c $filexz | shasum)
-          echo "$NEWSUM (new xzip uncompressed checksum)"
+          echo "$NEWSUM ($filexz uncompressed checksum)"
 
           if xz -t "$filexz"; then
             if [ "${ORIGSUM}" = "${NEWSUM}" ]; then
