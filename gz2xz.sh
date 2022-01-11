@@ -55,16 +55,23 @@ do
         XZORIGSUM=$(unxz -c $filexz | shasum)
         echo "$XZORIGSUM ($(basename $filexz) uncompressed checksum)"
         if [ "${ORIGSUM}" = "${XZORIGSUM}" ]; then
-          echo "GOOD: source and xzip files match"
+          read "confirmdelete?$(basename $filexz) exists and data checksum matches $(basename $file). Delete $(basename $file)? [y/n]"
+          if [[ "$confirmdelete" =~ ^[Yy]$ ]]
+          then
+            rm $file
+          fi
+          SKIPFILE=true
+
         else
           echo "WARNING: checksum mismatch! existing xzip file contains different data"
-        fi
-        read "confirmoverwrite?$(basename $filexz) already exists! Overwrite? [y]"
-        if [[ "$confirmoverwrite" =~ ^[Yy]$ ]]
-        then
-          SKIPFILE=false
-        else
-          SKIPFILE=true
+
+          read "confirmoverwrite?$(basename $filexz) already exists! Overwrite? [y/n]"
+          if [[ "$confirmoverwrite" =~ ^[Yy]$ ]]
+          then
+            SKIPFILE=false
+          else
+            SKIPFILE=true
+          fi
         fi
       fi
 
