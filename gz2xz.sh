@@ -53,7 +53,7 @@ do
           echo "$ORIGSUM ($(basename $file) original file checksum)"
         fi
         XZORIGSUM=$(unxz -c $filexz | shasum)
-        echo "$XZORIGSUM ($(basename $filexz) uncompressed checksum)"
+        echo "$XZORIGSUM ($(basename $filexz) xz uncompressed checksum)"
         if [ "${ORIGSUM}" = "${XZORIGSUM}" ]; then
           rm $file
           echo "$(basename $filexz) exists and data checksum matches $(basename $file). Deleted $(basename $file)"
