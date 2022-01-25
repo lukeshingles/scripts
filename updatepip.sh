@@ -2,6 +2,7 @@
 # set -x #echo on
 
 declare -a arr=("pypy3" "python3.10")
+# declare -a arr=("python3.10")
 
 # now loop through the above array
 for pyver in "${arr[@]}"
