@@ -6,7 +6,7 @@
 	<string>com.lukeshingles.ddnsgodaddy</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/Users/lshingles/ddnsupdate.py</string>
+		<string>/Users/luke/GitHub/lukeshingles/scripts/ddnsupdate.py</string>
 	</array>
 	<key>StandardOutPath</key>
 	<string>/Users/lshingles/ddnsupdate_log.txt</string>
