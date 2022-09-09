@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>com.lukeshingles.ddnsgodaddy</string>
+	<string>com.lukeshingles.ddns</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/Users/luke/GitHub/lukeshingles/scripts/ddnsupdate.py</string>
