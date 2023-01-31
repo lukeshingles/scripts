@@ -3,5 +3,6 @@ set -x #echo on
 
 brew update
 brew upgrade
-brew upgrade --cask
+brew upgrade google-drive
+brew autoremove
 brew cleanup

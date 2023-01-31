@@ -2,8 +2,6 @@
 set -e
 set -o pipefail
 
-#!/usr/bin/env zsh
-
 if [ $# -eq 0 ]; then
   echo 1>&2 "Usage: $0 [file ...]"
   exit 3
