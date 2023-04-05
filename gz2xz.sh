@@ -44,13 +44,13 @@ do
       SKIPFILE=false
       if [[ -f "$filexz" ]]; then
         if [[ ${file##*\.}  == 'gz' ]]; then
-          ORIGSUM=$(gunzip -c $file | shasum)
+          ORIGSUM=$(gzip -d --to-stdout $file | shasum)
           echo "$ORIGSUM ($(basename $file) gzip uncompressed checksum)"
         else
           ORIGSUM=$(shasum < $file)
           echo "$ORIGSUM ($(basename $file) original file checksum)"
         fi
-        XZORIGSUM=$(unxz -c $filexz | shasum)
+        XZORIGSUM=$(xz -d --to-stdout $filexz | shasum)
         echo "$XZORIGSUM ($(basename $filexz) xz uncompressed checksum)"
         if [ "${ORIGSUM}" = "${XZORIGSUM}" ]; then
           rm $file
@@ -74,13 +74,13 @@ do
           # uncompress gzip and compress xzip
 
           incompletefile=$filexz
-          gunzip < "$file" | xz -T0 -f -v --best > "$filexz"
+          gzip -d < "$file" | xz -T0 -f -v --best > "$filexz"
           incompletefile=""
 
-          ORIGSUM=$(gunzip -c $file | shasum)
+          ORIGSUM=$(gzip -d --to-stdout $file | shasum)
           echo "$ORIGSUM ($(basename $file) gzip uncompressed checksum)"
 
-          NEWSUM=$(unxz -c $filexz | shasum)
+          NEWSUM=$(xz -d --to-stdout $filexz | shasum)
           echo "$NEWSUM ($(basename $filexz) uncompressed checksum)"
 
           if xz -t "$filexz"; then
