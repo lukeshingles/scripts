@@ -25,9 +25,9 @@ trap "trap_ctrlc" 2
 for file in "$@"
 do
   if [[ -f "$file" ]]; then
-    if [[ ${file##*\.}  == 'lz4' ]]; then
-      echo $file is already lz4
-      # if lz4 -t "$file"; then
+    if [[ ${file##*\.}  == 'zst' ]]; then
+      echo $file is already zstd
+      # if zstd -t "$file"; then
       #   echo $file is good!
       # else
       #   echo $file is bad!
@@ -36,30 +36,30 @@ do
       echo " "
       du -h $file
       if [[ ${file##*\.}  == 'xz' ]]; then
-        filelz4=${file%.xz}.lz4
+        filezstd=${file%.xz}.zst
       else
-        filelz4=$file.lz4
+        filezstd=$file.zst
       fi
 
       SKIPFILE=false
-      if [[ -f "$filelz4" ]]; then
+      if [[ -f "$filezstd" ]]; then
         if [[ ${file##*\.}  == 'xz' ]]; then
-          ORIGSUM=$(xz -d --to-stdout $file | shasum)
+          ORIGSUM=$(xz -d -T0 --to-stdout $file | shasum)
           echo "$ORIGSUM ($(basename $file) xzip uncompressed checksum)"
         else
           ORIGSUM=$(shasum < $file)
           echo "$ORIGSUM ($(basename $file) original file checksum)"
         fi
-        lz4ORIGSUM=$(lz4 -d --to-stdout $filelz4 | shasum)
-        echo "$lz4ORIGSUM ($(basename $filelz4) lz4 uncompressed checksum)"
-        if [ "${ORIGSUM}" = "${lz4ORIGSUM}" ]; then
-          # rm $file
-          echo "$(basename $filelz4) exists and data checksum matches $(basename $file). Deleted $(basename $file)"
+        ZSTDORIGSUM=$(zstd -d -T0 --stdout $filezstd | shasum)
+        echo "$ZSTDORIGSUM ($(basename $filezstd) zstd uncompressed checksum)"
+        if [ "${ORIGSUM}" = "${ZSTDORIGSUM}" ]; then
+          rm $file
+          echo "$(basename $filezstd) exists and data checksum matches $(basename $file). Deleted $(basename $file)"
           SKIPFILE=true
         else
-          echo "WARNING: checksum mismatch! existing lz4ip file contains different data"
+          echo "WARNING: checksum mismatch! existing zstdip file contains different data"
 
-          read "confirmoverwrite?$(basename $filelz4) already exists! Overwrite? [y/n]"
+          read "confirmoverwrite?$(basename $filezstd) already exists! Overwrite? [y/n]"
           if [[ "$confirmoverwrite" =~ ^[Yy]$ ]]
           then
             SKIPFILE=false
@@ -71,34 +71,34 @@ do
 
       if [ "$SKIPFILE" = false ]; then
         if [[ ${file##*\.}  == 'xz' ]]; then
-          # uncompress xzip and compress lz4ip
+          # uncompress xzip and compress zstdip
 
-          incompletefile=$filelz4
-          xz -d -k < "$file" | lz4 -f -v --best > "$filelz4"
+          incompletefile=$filezstd
+          xz -d -T0 -k < "$file" | zstd -T0 -f -v -20 > "$filezstd"
           incompletefile=""
 
-          ORIGSUM=$(xz -d --to-stdout $file | shasum)
+          ORIGSUM=$(xz -d -T0 --to-stdout $file | shasum)
           echo "$ORIGSUM ($(basename $file) xzip uncompressed checksum)"
 
-          NEWSUM=$(lz4 -d --to-stdout $filelz4 | shasum)
-          echo "$NEWSUM ($(basename $filelz4) uncompressed checksum)"
+          NEWSUM=$(zstd -d -T0 --stdout $filezstd | shasum)
+          echo "$NEWSUM ($(basename $filezstd) zstd uncompressed checksum)"
 
-          if lz4 -t "$filelz4"; then
+          if zstd -t "$filezstd"; then
             if [ "${ORIGSUM}" = "${NEWSUM}" ]; then
-              # rm $file
-              echo "$(basename $filelz4) is good and checksum matched. Deleted $(basename $file)"
+              rm $file
+              echo "$(basename $filezstd) is good and checksum matched. Deleted $(basename $file)"
             else
-              rm $filelz4
+              rm $filezstd
               echo "ERROR: checksum mismatch! Did not delete $(basename $file)"
               read "Press enter to continue"
             fi
           else
-            rm $filelz4
-            echo "ERROR: $(basename $filelz4) is bad according to lz4!"
+            rm $filezstd
+            echo "ERROR: $(basename $filezstd) is bad according to zstd!"
             read "Press enter to continue"
           fi
         else
-          lz4 -T0 -f -v --best $file
+          zstd -T0 -f -v -20 --rm $file
         fi
       fi
     fi
