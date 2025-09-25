@@ -2,7 +2,7 @@
 chflags nohidden ~/Library
 
 # Show the /Volumes folder
-#sudo chflags nohidden /Volumes
+sudo chflags nohidden /Volumes
 
 # Finder: show status bar
 defaults write com.apple.finder ShowStatusBar -bool true
@@ -13,11 +13,11 @@ defaults write com.apple.finder ShowPathbar -bool true
 # Disable the warning before emptying the Trash
 defaults write com.apple.finder WarnOnEmptyTrash -bool false
 
-# Bottom left screen corner -> put display to sleep
-defaults write com.apple.dock wvous-bl-corner -int 10
+# Bottom right screen corner -> put display to sleep
+defaults write com.apple.dock wvous-br-corner -int 10
 
 # Copy email addresses as `foo@example.com` instead of `Foo Bar <foo@example.com>` in Mail.app
-defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
+sudo defaults write com.apple.mail AddressesIncludeNameOnPasteboard -bool false
 
 # Prevent Time Machine from prompting to use new hard drives as backup volume
 defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true
