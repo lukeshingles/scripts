@@ -8,5 +8,5 @@ fi
 for file in "$@"
 do
     newfile=${file%.pdf}.png
-    sips -s format png "$file" --out "$newfile"
+    sips -s format png "$file" --resampleWidth 1024 --out "$newfile"
 done
