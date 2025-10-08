@@ -16,22 +16,23 @@ def get_type_escapetype(line: str) -> tuple[str, str]:
 def main() -> None:
     TYPE_ESCAPE = str(at.packets.type_ids["TYPE_ESCAPE"])
     TYPE_RPKT = str(at.packets.type_ids["TYPE_RPKT"])
-    for filein in sorted(Path().glob("packets00_*.out.*")):
+    for filein in sorted(Path().glob("packets00_*.out*"), key=lambda p: p.stat().st_mtime):
         if "parquet" in filein.name:
             continue
-        print(f"Inspecting {filein}...", end="")
+        print(f"Inspecting {filein}...", end="", flush=True)
         linesin = at.zopen(filein).readlines()
 
         if any(get_type_escapetype(line) != (TYPE_ESCAPE, TYPE_RPKT) for line in linesin if not line.startswith("#")):
             print("contains gamma or non-escaped packets, filtering...")
-            backupfolder = filein.parent / "packets_beforefilter"
-            backupfolder.mkdir(exist_ok=True)
             fileout_rpkt = Path(
                 *filein.parts[:-1],
                 filein.parts[-1].removesuffix(".zst").removesuffix(".gz").removesuffix(".xz") + ".zst",
             )
-            fileout_rpkt_temp = Path(*fileout_rpkt.parts[:-1], fileout_rpkt.parts[-1] + ".partialtmp")
-            print("  writing filtered rpkts..", end="")
+            fileout_rpkt_temp = Path(
+                *fileout_rpkt.parts[:-1],
+                f"{fileout_rpkt.parts[-1]}.partialtmp",
+            )
+            print("  filtering rpkts..", end="", flush=True)
             kept_packets = 0
 
             with compression.zstd.open(fileout_rpkt_temp, "wt", level=12) as foutrpkt:
@@ -53,8 +54,10 @@ def main() -> None:
             print(
                 f" kept {kept_packets} of {len(linesin)} packets ({kept_packets / len(linesin) * 100:.2f}%) new/old size {size_factor * 100:.2f}%"
             )
-            print(f"  Wrote {fileout_rpkt} and backed up {filein} to {backupfolder / filein.name}...")
+            backupfolder = filein.parent / "packets_beforefilter"
+            backupfolder.mkdir(exist_ok=True)
             filein.rename(backupfolder / filein.name)
+            print(f"  Backed up {filein} to {backupfolder / filein.name} and wrote {fileout_rpkt}.")            
             fileout_rpkt_temp.rename(fileout_rpkt)
         else:
             print("contains only escaped rpkts, skipping...")
