@@ -26,7 +26,7 @@ def main() -> None:
     for filein in sorted(Path().glob("**/packets/packets00_*.out*"), key=lambda p: p.stat().st_mtime):
         if "parquet" in filein.name:
             continue
-        print(f"{filein}")
+        print(f"\n{filein}")
         linesin = at.zopen(filein).readlines()
 
         if all(get_type_escapetype(line) == (TYPE_ESCAPE, TYPE_RPKT) for line in linesin if not line.startswith("#")):
