@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 from pathlib import Path
 
 import compression
@@ -14,53 +15,70 @@ def get_type_escapetype(line: str) -> tuple[str, str]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description='Plot text file')
+    parser.add_argument('--rm', action='store_true',
+                        help='Remove original files after processing')
+    parser.add_argument('-f', action='store_true',
+                        help='Confirm performing the filtering')
+    args = parser.parse_args()
     TYPE_ESCAPE = str(at.packets.type_ids["TYPE_ESCAPE"])
     TYPE_RPKT = str(at.packets.type_ids["TYPE_RPKT"])
-    for filein in sorted(Path().glob("packets00_*.out*"), key=lambda p: p.stat().st_mtime):
+    for filein in sorted(Path().glob("**/packets/packets00_*.out*"), key=lambda p: p.stat().st_mtime):
         if "parquet" in filein.name:
             continue
-        print(f"Inspecting {filein}...", end="", flush=True)
+        print(f"{filein}")
         linesin = at.zopen(filein).readlines()
 
-        if any(get_type_escapetype(line) != (TYPE_ESCAPE, TYPE_RPKT) for line in linesin if not line.startswith("#")):
-            print("contains gamma or non-escaped packets, filtering...")
-            fileout_rpkt = Path(
-                *filein.parts[:-1],
-                filein.parts[-1].removesuffix(".zst").removesuffix(".gz").removesuffix(".xz") + ".zst",
-            )
-            fileout_rpkt_temp = Path(
-                *fileout_rpkt.parts[:-1],
-                f"{fileout_rpkt.parts[-1]}.partialtmp",
-            )
-            print("  filtering rpkts..", end="", flush=True)
-            kept_packets = 0
+        if all(get_type_escapetype(line) == (TYPE_ESCAPE, TYPE_RPKT) for line in linesin if not line.startswith("#")):
+            print("  contains only escaped rpkts, skipping...")
+            continue
 
-            with compression.zstd.open(fileout_rpkt_temp, "wt", level=12) as foutrpkt:
-                for line in linesin:
-                    type_id, escape_type_id = get_type_escapetype(line)
-                    if line.startswith("#"):
-                        assert type_id == "type_id"
-                        assert escape_type_id == "escape_type_id"
+        print("  contains gamma or non-escaped packets, should filter this file.")
+        if not args.f:
+            print("  (not filtering. Use -f to confirm filtering)")
+            continue
 
-                        foutrpkt.write(line)
-                        continue
+        fileout_rpkt = Path(
+            *filein.parts[:-1],
+            filein.parts[-1].removesuffix(".zst").removesuffix(".gz").removesuffix(".xz") + ".zst",
+        )
+        fileout_rpkt_temp = Path(
+            *fileout_rpkt.parts[:-1],
+            f"{fileout_rpkt.parts[-1]}.partialtmp",
+        )
+        print("  filtering rpkts...", end="", flush=True)
+        kept_packets = 0
 
-                    if type_id == str(at.packets.type_ids["TYPE_ESCAPE"]) and escape_type_id == str(
-                        at.packets.type_ids["TYPE_RPKT"]
-                    ):
-                        foutrpkt.write(line)
-                        kept_packets += 1
-            size_factor = fileout_rpkt_temp.stat().st_size / filein.stat().st_size
-            print(
-                f" kept {kept_packets} of {len(linesin)} packets ({kept_packets / len(linesin) * 100:.2f}%) new/old size {size_factor * 100:.2f}%"
-            )
+        with compression.zstd.open(fileout_rpkt_temp, "wt", level=12) as foutrpkt:
+            for line in linesin:
+                type_id, escape_type_id = get_type_escapetype(line)
+                if line.startswith("#"):
+                    assert type_id == "type_id"
+                    assert escape_type_id == "escape_type_id"
+
+                    foutrpkt.write(line)
+                    continue
+
+                if type_id == str(at.packets.type_ids["TYPE_ESCAPE"]) and escape_type_id == str(
+                    at.packets.type_ids["TYPE_RPKT"]
+                ):
+                    foutrpkt.write(line)
+                    kept_packets += 1
+        size_factor = fileout_rpkt_temp.stat().st_size / filein.stat().st_size
+        print(
+            f" kept {kept_packets} of {len(linesin)} packets ({kept_packets / len(linesin) * 100:.2f}%) new/old size {size_factor * 100:.2f}%"
+        )
+        if args.rm:
+            filein.unlink()
+            print(f"  removed {filein}")
+        else:
             backupfolder = filein.parent / "packets_beforefilter"
             backupfolder.mkdir(exist_ok=True)
             filein.rename(backupfolder / filein.name)
-            print(f"  Backed up {filein} to {backupfolder / filein.name} and wrote {fileout_rpkt}.")            
-            fileout_rpkt_temp.rename(fileout_rpkt)
-        else:
-            print("contains only escaped rpkts, skipping...")
+            print(f"  backed up {filein} to {backupfolder / filein.name}")
+
+        fileout_rpkt_temp.rename(fileout_rpkt)
+        print(f"  wrote {fileout_rpkt}")            
 
 
 if __name__ == "__main__":
