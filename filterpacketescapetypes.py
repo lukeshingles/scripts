@@ -23,7 +23,13 @@ def main() -> None:
     args = parser.parse_args()
     TYPE_ESCAPE = str(at.packets.type_ids["TYPE_ESCAPE"])
     TYPE_RPKT = str(at.packets.type_ids["TYPE_RPKT"])
-    for filein in sorted(Path().glob("**/packets/packets00_*.out*"), key=lambda p: p.stat().st_mtime):
+    glob_pattern = "**/packets/packets00_*.out*"
+    matching_files = sorted(Path().glob(glob_pattern), key=lambda p: p.stat().st_mtime)
+    if not matching_files:
+        print(f"No matching files found for pattern {glob_pattern}")
+        return
+
+    for filein in matching_files:
         if "parquet" in filein.name:
             continue
         print(f"\n{filein}")
