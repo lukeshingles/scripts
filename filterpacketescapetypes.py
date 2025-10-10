@@ -53,11 +53,10 @@ def main() -> None:
             f"{fileout_rpkt.parts[-1]}.partial.tmp",
         )
         print("  filtering rpkts...", end="", flush=True)
-        packets_in = 0
+        commentrows = 0
         kept_packets = 0
 
         with compression.zstd.open(fileout_rpkt_temp, "wt", level=12) as foutrpkt:
-            commentrows = 0
             for line in linesin:
                 type_id, escape_type_id = get_type_escapetype(line)
                 if line.startswith("#"):
@@ -68,13 +67,13 @@ def main() -> None:
                     commentrows += 1
                     continue
 
-                packets_in += 1
                 if type_id == str(at.packets.type_ids["TYPE_ESCAPE"]) and escape_type_id == str(
                     at.packets.type_ids["TYPE_RPKT"]
                 ):
                     foutrpkt.write(line)
                     kept_packets += 1
         size_factor = fileout_rpkt_temp.stat().st_size / filein.stat().st_size
+        packets_in = len(linesin) - commentrows
         print(
             f" kept {kept_packets} of {packets_in} packets ({kept_packets / packets_in * 100:.2f}%) new/old size {size_factor * 100:.2f}%"
         )
