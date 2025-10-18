@@ -24,29 +24,27 @@ def main():
         default=["."],
         help="Folder to search for duplicates (default: .)",
     )
-    parser.add_argument(
-        "-name", default="*", help="Pattern to match filenames (default: *)"
-    )
+    parser.add_argument("-name", default="*", help="Pattern to match filenames (default: *)")
     parser.add_argument(
         "--cloudconflicts",
         default=False,
         action="store_true",
         help=(
-            "Find Google Drive/OneDrive conflict duplicates "
-            "[file.txt, file (1).txt, file(2).txt] with matching hashes"
+            "Find iCloud/Google Drive/OneDrive conflict duplicates "
+            "[file.txt, file 2.txt, file (1).txt, file(2).txt] with matching hashes"
             " and select the earliest-modified file."
         ),
     )
     parser.add_argument(
-        "--confirm",
+        "--rm",
         default=False,
         action="store_true",
-        help="Execute the delete and rename commands suggested by --findconflicts",
+        help="Execute the delete and rename commands suggested by --cloudconflicts",
     )
     args = parser.parse_args()
 
     findconflictmode = args.cloudconflicts
-    dryrun = not args.confirm
+    dryrun = not args.rm
 
     filelist_unfiltered = set()
     for path in args.paths:
@@ -54,17 +52,10 @@ def main():
             filelist_unfiltered.add(os.path.normpath(path))
         else:
             filelist_unfiltered.update(
-                [
-                    os.path.normpath(x)
-                    for x in glob.glob(os.path.join(path, "**"), recursive=True)
-                ]
+                [os.path.normpath(x) for x in glob.glob(os.path.join(path, "**"), recursive=True)]
             )
 
-    filelist = [
-        x
-        for x in filelist_unfiltered
-        if os.path.isfile(x) and fnmatch.fnmatch(x, args.name)
-    ]
+    filelist = [x for x in filelist_unfiltered if os.path.isfile(x) and fnmatch.fnmatch(x, args.name)]
 
     sizedict = {}
     for filepath in filelist:
@@ -82,9 +73,7 @@ def main():
                 # print(strhash, os.path.getsize(filepath), filepath)
 
             founddupehashthissize = False
-            for strhash, filematches in (
-                x for x in hashdict_thissize.items() if len(x[1]) > 1
-            ):
+            for strhash, filematches in (x for x in hashdict_thissize.items() if len(x[1]) > 1):
                 if founddupehashthissize:
                     print()
                 else:
@@ -95,9 +84,7 @@ def main():
 
                 for filematch in filematches:
                     mtime = os.path.getmtime(filematch)
-                    print(
-                        f"  {strhash}  {os.path.getsize(filematch)} bytes  {time.ctime(mtime)}  {filematch}"
-                    )
+                    print(f"  {strhash}  {os.path.getsize(filematch)} bytes  {time.ctime(mtime)}  {filematch}")
 
             if founddupehashthissize:
                 founddupehash = True
@@ -108,35 +95,29 @@ def main():
             for filematch in filematches:
                 strhash = getfilehash(filematch)
 
-                suffixpart = "".join(
-                    Path(filematch).suffixes
-                )  # contains ".tar.gz" for example
                 originalname = Path(filematch).name
+                allsuffixpart = "".join(Path(filematch).suffixes)  # contains ".tar.gz" for example
 
                 # temporarily remove the suffix part if there is one
-                if suffixpart:
-                    originalname = originalname[: -len(suffixpart)]
+                if allsuffixpart:
+                    originalname = originalname[: -len(allsuffixpart)]
 
                 for dupnum in range(10):
-                    for endstr in (f" ({dupnum:d})", f" {dupnum:d}"):
-                        if originalname.endswith(endstr):
-                            originalname = originalname[: -len(endstr)]
+                    for revisionnumberstr in (f" ({dupnum:d})", f" {dupnum:d}"):
+                        if originalname.endswith(revisionnumberstr):
+                            originalname = originalname[: -len(revisionnumberstr)]
                             break
+                        for i, suffix in reversed(list(enumerate(Path(filematch).suffixes))):
+                            if suffix.endswith(revisionnumberstr):
+                                allsuffixpart = allsuffixpart.replace(revisionnumberstr, "", 1)
+                                break
 
-                originalpath = os.path.normpath(
-                    os.path.join(Path(filematch).parent, originalname + suffixpart)
-                )
+                originalpath = os.path.normpath(os.path.join(Path(filematch).parent, originalname + allsuffixpart))
 
-                originalpathhashdict.setdefault((originalpath, strhash), []).append(
-                    filematch
-                )
+                originalpathhashdict.setdefault((originalpath, strhash), []).append(filematch)
 
-            for (originalpath, strhash), pathhashmatches in (
-                x for x in originalpathhashdict.items() if len(x[1]) > 1
-            ):
-                pathhashmatches.sort(
-                    key=lambda f: (Path(f).parent, Path(f).stem, Path(f).suffix)
-                )
+            for (originalpath, strhash), pathhashmatches in (x for x in originalpathhashdict.items() if len(x[1]) > 1):
+                pathhashmatches.sort(key=lambda f: (Path(f).parent, Path(f).stem, Path(f).suffix))
 
                 if founddupehash:
                     print()
@@ -147,9 +128,7 @@ def main():
 
                 mtimes = [os.path.getmtime(filepath) for filepath in pathhashmatches]
                 oldestfilepath = [
-                    filepath
-                    for filepath in pathhashmatches
-                    if os.path.getmtime(filepath) == min(mtimes)
+                    filepath for filepath in pathhashmatches if os.path.getmtime(filepath) == min(mtimes)
                 ][0]
 
                 for filepath in sorted(pathhashmatches):
@@ -160,11 +139,7 @@ def main():
                         f"   {strhash}, {os.path.getsize(filepath)} bytes, modified {time.ctime(mtime)}, "
                         f"'{filepath}'{keepstr}"
                     )
-                rmfiles = [
-                    filepath
-                    for filepath in pathhashmatches
-                    if filepath != oldestfilepath
-                ]
+                rmfiles = [filepath for filepath in pathhashmatches if filepath != oldestfilepath]
                 print()
                 for filepath in rmfiles:
                     if dryrun:
@@ -174,9 +149,7 @@ def main():
                         os.remove(filepath)
                 if oldestfilepath != originalpath:
                     if dryrun:
-                        print(
-                            f"   (not executed) mv '{oldestfilepath}' '{originalpath}'"
-                        )
+                        print(f"   (not executed) mv '{oldestfilepath}' '{originalpath}'")
                     else:
                         print(f"   mv '{oldestfilepath}' '{originalpath}'")
                         os.rename(oldestfilepath, originalpath)
@@ -184,9 +157,7 @@ def main():
     if not founddupehash:
         print(f"No duplicates found among {len(filelist)} files")
     elif findconflictmode and dryrun:
-        print(
-            "\nThis was a dry run only. Confirm the rename and deletion operations using --confirm"
-        )
+        print("\nThis was a dry run only. Confirm the rename and deletion operations using --confirm")
 
 
 if __name__ == "__main__":
