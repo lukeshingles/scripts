@@ -157,7 +157,7 @@ def main():
     if not founddupehash:
         print(f"No duplicates found among {len(filelist)} files")
     elif findconflictmode and dryrun:
-        print("\nThis was a dry run only. Confirm the rename and deletion operations using --confirm")
+        print("\nThis was a dry run only. Confirm the rename and deletion operations using --rm")
 
 
 if __name__ == "__main__":
